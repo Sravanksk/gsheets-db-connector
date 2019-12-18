@@ -93,12 +93,14 @@ class GoogleSheetsConnector:
 
         self.__sheet.worksheet(worksheet).update_cells(cell_list)
 
-    def add_worksheet(self, title: str, rows: int, cols: int) -> None:
+    def create_worksheet(self, title: str) -> None:
         """
         :param title: title of the new worksheet.
-        :param rows: Number of rows.
-        :param cols: Number of columns.
+        :return: None
         """
-        logger.info('Creating Worksheet')
-        self.__sheet.add_worksheet(title, rows, cols)
-        logger.info('Worksheet created')
+        if title in [ws.title for ws in self.__sheet.worksheets()]:
+            logger.error("Worksheet '%s' already exists", title)
+        else:
+            logger.info('Creating Worksheet')
+            self.__sheet.add_worksheet(title, rows=None, cols=None)
+            logger.info('Worksheet created')
