@@ -92,3 +92,13 @@ class GoogleSheetsConnector:
             cell_list[i].value = val
 
         self.__sheet.worksheet(worksheet).update_cells(cell_list)
+
+    def add_worksheet(self, title: str, rows: int, cols: int) -> None:
+        """
+        :param title: title of the new worksheet.
+        :param rows: Number of rows.
+        :param cols: Number of columns.
+        """
+        logger.info('Creating Worksheet')
+        self.__sheet.add_worksheet(title, rows, cols)
+        logger.info('Worksheet created')
