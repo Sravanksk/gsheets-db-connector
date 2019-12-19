@@ -4,7 +4,7 @@ GoogleSheetsConnector(): Connection between Google Sheets and SQLite
 
 import json
 import logging
-from typing import List
+from typing import List, Dict
 
 import gspread
 import pandas as pd
@@ -48,13 +48,14 @@ class GoogleSheetsConnector:
         """
         self.__sheet.worksheet(worksheet).update_acell(cell, new_value)
 
-    def clear_worksheet(self, worksheet: str) -> None:
+    def clear_worksheet(self, data_frames: List[Dict]) -> None:
         """
         Clear a worksheet completely
-        :param worksheet: name of the worksheet
+        :param data_frames: List of dicts with table name 'table' and worksheet name 'sheet_name'
         :return: None
         """
-        self.__sheet.worksheet(worksheet).clear()
+        for data_frame in data_frames:
+            self.__sheet.worksheet(data_frame['sheet_name']).clear()
 
     def extract_data(self) -> None:
         """
@@ -94,6 +95,7 @@ class GoogleSheetsConnector:
 
     def create_worksheet(self, title: str) -> None:
         """
+        Create a New Worksheet
         :param title: title of the new worksheet.
         :return: None
         """
@@ -104,14 +106,34 @@ class GoogleSheetsConnector:
             self.__sheet.add_worksheet(title, rows=None, cols=None)
             logger.info('Worksheet created')
 
-    def write_to_sheet(self, sheet_range: str, params: dict, body: dict) -> None:
+    def load_data_to_sheet(self, data_frames: List[Dict]) -> None:
         """
-        :param sheet_range: The `A1 notation <https://developers.google.com/sheets/api/guides/concepts#a1_notation>`_
-                          of a range to search for a logical table of data. Values will be appended after the last row of the table.
-        :param params: `Query parameters <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append#query-parameters>`_.
-        :param body: `Request body <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append#request-body>`_.
+        Writes data to Google Sheets
+        :param data_frames: List of dicts with table name 'table' and worksheet name 'sheet_name'
         :return: None
         """
-        logger.info('Writing Data to sheet')
-        self.__sheet.values_append(sheet_range, params, body)
-        logger.info('Data successfully uploaded')
+        for data_frame in data_frames:
+            df = pd.read_sql_query(sql='select * from {0}'.format(data_frame['table']), con=self.__dbconn)
+            df.fillna('', inplace=True)
+            df_headers = df.columns.values.tolist()
+            df_headers_array = [df_headers]
+            df_data = df.values.tolist()
+            body_data = df_headers_array + df_data
+            col_size = len(body_data[0])
+            org_name = data_frame['sheet_name']
+            params = {
+                'value_input_option': 'USER_ENTERED',
+                'insert_data_option': 'OVERWRITE'
+            }
+            body = {
+                "majorDimension": "ROWS",
+                "values": body_data
+            }
+
+            RANGE_NAME = "{0}!A1:{1}".format(org_name, col_size)
+            sheets_list = [ws.title for ws in self.__sheet.worksheets()]
+            if org_name not in sheets_list:
+                self.__sheet.add_worksheet(title=org_name, rows=None, cols=None)
+            logger.info('Writing data to Google Sheet')
+            self.__sheet.values_append(range=RANGE_NAME, params=params, body=body)
+            logger.info('Data successfully uploaded')
