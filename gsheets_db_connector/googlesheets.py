@@ -11,7 +11,6 @@ import pandas as pd
 
 from oauth2client.service_account import ServiceAccountCredentials
 
-
 logger = logging.getLogger('GoogleSheetsConnector')
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -104,3 +103,15 @@ class GoogleSheetsConnector:
             logger.info('Creating Worksheet')
             self.__sheet.add_worksheet(title, rows=None, cols=None)
             logger.info('Worksheet created')
+
+    def write_to_sheet(self, sheet_range: str, params: dict, body: dict) -> None:
+        """
+        :param sheet_range: The `A1 notation <https://developers.google.com/sheets/api/guides/concepts#a1_notation>`_
+                          of a range to search for a logical table of data. Values will be appended after the last row of the table.
+        :param params: `Query parameters <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append#query-parameters>`_.
+        :param body: `Request body <https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/append#request-body>`_.
+        :return: None
+        """
+        logger.info('Writing Data to sheet')
+        self.__sheet.values_append(sheet_range, params, body)
+        logger.info('Data successfully uploaded')
