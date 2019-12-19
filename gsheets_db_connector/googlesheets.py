@@ -21,6 +21,7 @@ class GoogleSheetsConnector:
     - Extract Data from Google Sheets and load to SQLite
     - Write Data to Google Sheets
     """
+
     def __init__(self, config, db_conn):
         credentials = ServiceAccountCredentials.from_json_keyfile_dict(
             json.loads(config.get('gsheets_credentials')), scope)
@@ -48,14 +49,13 @@ class GoogleSheetsConnector:
         """
         self.__sheet.worksheet(worksheet).update_acell(cell, new_value)
 
-    def clear_worksheet(self, data_frames: List[Dict]) -> None:
+    def clear_worksheet(self, worksheet: str) -> None:
         """
         Clear a worksheet completely
-        :param data_frames: List of dicts with table name 'table' and worksheet name 'sheet_name'
+        :param worksheet: name of the worksheet
         :return: None
         """
-        for data_frame in data_frames:
-            self.__sheet.worksheet(data_frame['sheet_name']).clear()
+        self.__sheet.worksheet(worksheet).clear()
 
     def extract_data(self) -> None:
         """
@@ -106,7 +106,7 @@ class GoogleSheetsConnector:
             self.__sheet.add_worksheet(title, rows=None, cols=None)
             logger.info('Worksheet created')
 
-    def load_data_to_sheet(self, data_frames: List[Dict]) -> None:
+    def load_sheets(self, data_frames: List[Dict]) -> None:
         """
         Writes data to Google Sheets
         :param data_frames: List of dicts with table name 'table' and worksheet name 'sheet_name'
@@ -134,6 +134,7 @@ class GoogleSheetsConnector:
             sheets_list = [ws.title for ws in self.__sheet.worksheets()]
             if org_name not in sheets_list:
                 self.__sheet.add_worksheet(title=org_name, rows=None, cols=None)
+            self.__sheet.worksheet(title=org_name).clear()
             logger.info('Writing data to Google Sheet')
             self.__sheet.values_append(range=RANGE_NAME, params=params, body=body)
             logger.info('Data successfully uploaded')
