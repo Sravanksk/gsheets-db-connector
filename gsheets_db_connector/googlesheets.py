@@ -11,6 +11,7 @@ import pandas as pd
 
 from oauth2client.service_account import ServiceAccountCredentials
 
+
 logger = logging.getLogger('GoogleSheetsConnector')
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
